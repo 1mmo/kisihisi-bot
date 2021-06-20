@@ -1,0 +1,12 @@
+version: '3.7'
+
+services:
+  web:
+    build: .
+    command: python django_bot/manage.py runserver
+    volumes:
+      - .:/opt/kisihisi 
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env
