@@ -12,7 +12,7 @@ fi
 
 $VENV/bin/pip install -r requirements.txt
 
-$VENV/bin/python src/bot/bot.py
+$VENV/bin/python3 src/bot/bot.py
 
 rm -f $DEPLOY_FLAG
 
