@@ -1,4 +1,8 @@
 .env
 venv
 __pycache__
+*.flag
+src/static
+bot.log
+postgres_data
 
