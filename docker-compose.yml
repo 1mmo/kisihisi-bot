@@ -11,10 +11,10 @@ services:
       - .:/opt/kisihisi
     container_name: kisihisi-web
     ports:
-      - "0.0.0.0:8080:8000"
+      - "0.0.0.0:8000:8000"
     env_file: .env
     working_dir: /opt/kisihisi
-    command: python3 src/manage.py runserver 
+    command: /bin/bash -c 'scripts/run_server.sh'
 
   bot:
     tty: true
@@ -26,7 +26,7 @@ services:
       - .:/opt/kisihisi
     container_name: kisihisi-bot
     working_dir: /opt/kisihisi
-    command: python3 /src/bot/bot.py
+    command: /bin/bash -c 'scripts/run_bot.sh'
 
   db:
     image: postgres:12.0-alpine
