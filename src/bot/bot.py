@@ -114,8 +114,16 @@ async def send_category_pages(message: types.Message, page):
                     categories[i+1][i],
                     callback_data=cd+str(categories[i+1][0])))
         else:
+            paginator.add_before(
+                    InlineKeyboardButton(
+                        categories[i][1],
+                        callback_data=cd+str(categories[i][0])))
 
-
+    await bot.send_message(
+            message.chat.id,
+            text=f'Услуги {page}',
+            reply_markup=paginator.markup,
+    )
 
 
 if __name__ == '__main__':
