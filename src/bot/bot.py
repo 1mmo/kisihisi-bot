@@ -7,9 +7,11 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from emoji import emojize
+
+from keyboard.pagination_kb import InlineKeyboardPaginator
 
 
 API_TOKEN = os.environ.get('BOT_TOKEN')
@@ -37,7 +39,7 @@ async def send_welcome(message: types.Message, from_user=None):
     keyboard.row(button_tariffs, button_my_entry)
     inline_button_services = InlineKeyboardButton('Услуги 🥰', callback_data='services')
     inline_button_date = InlineKeyboardButton('Дата 🗓', callback_data='date')
-    inline_kb = InlineKeyboardMarkup().add(inline_button_services, inline_button_date)
+    inline_kb = InlineKeyboardMarkup().row(inline_button_services, inline_button_date)
     values = []
     if from_user:
         name = from_user.first_name
@@ -60,7 +62,7 @@ async def send_welcome(message: types.Message, from_user=None):
         'Чтобы записаться на прием выбери услугу и дату записи'
     )
     await message.answer(reply, reply_markup=keyboard)
-    await bot.send_message(message.chat.id, text=reply2, reply_markup=inline_kb)
+    await message.answer(reply2, reply_markup=inline_kb)
 
 @dp.callback_query_handler(lambda c: c.data == 'services')
 async def process_callback_services(callback_query: types.CallbackQuery):
@@ -80,6 +82,38 @@ async def help_text(message: types.Message):
         "Помощь по боту"
     )
     await message.answer(reply)
+
+
+async def send_category_pages(message: types.Message, page):
+    categories = db.get_categories() #нужно реализовать
+    pages = 1
+    if len(categories) % 10 == 0:
+        pages = len(categories)//10
+    else:
+        pages = len(categories)//10 + 1
+    paginator = InlineKeyboardPaginator(
+        pages,
+        current_page=page,
+        data_pattern='category#{page}',
+    )
+    start_f = page * 10 - 10
+    stop_f = page * 10
+    cd = 'category#'
+    # cd - callback data type
+    
+    if len(categories) < stop_f:
+        stop_f = len(categories)
+
+    for i in range(start_f, stop_f, 2):
+        if stop_f != (i+1):
+            paginator.add_before(
+                InlineKeyboardButton(
+                    categories[i][1],
+                    callback_data=cd+str(categories[i][0])),
+                InlineKeyboardButton(
+                    categories[i+1][i],
+                    callback_data=cd+str(categories[i+1][0])))
+        else:
 
 
 
