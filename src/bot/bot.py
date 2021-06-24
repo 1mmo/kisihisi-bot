@@ -9,7 +9,6 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from emoji import emojize
 
 from keyboard.pagination_kb import InlineKeyboardPaginator
 
@@ -29,14 +28,14 @@ dp = Dispatcher(bot, storage=storage)
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message, from_user=None):
-    button_tariffs = types.KeyboardButton(
-                text='Тарифы 💸', call_data='tariffs'
+    button_location = types.KeyboardButton(
+                text='Локация 📍', call_data='location'
             )
     button_my_entry = types.KeyboardButton(
                 text='Моя запись 🔖', call_data='my_entry'
             )
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    keyboard.row(button_tariffs, button_my_entry)
+    keyboard.row(button_location, button_my_entry)
     inline_button_services = InlineKeyboardButton('Услуги 🥰', callback_data='services')
     inline_button_date = InlineKeyboardButton('Дата 🗓', callback_data='date')
     inline_kb = InlineKeyboardMarkup().row(inline_button_services, inline_button_date)
@@ -66,8 +65,7 @@ async def send_welcome(message: types.Message, from_user=None):
 
 @dp.callback_query_handler(lambda c: c.data == 'services')
 async def process_callback_services(callback_query: types.CallbackQuery):
-    await bot.answer_callback_query(callback_query.id)
-    await bot.send_message(callback_query.from_user.id, 'services')
+    await send_category_pages(callback_query, 1)
 
 
 @dp.callback_query_handler(lambda c: c.data == 'date')
@@ -84,7 +82,20 @@ async def help_text(message: types.Message):
     await message.answer(reply)
 
 
-async def send_category_pages(message: types.Message, page):
+@dp.message_handler()
+async def message_parse(message: types.Message):
+    if 'Локация' in message.text:
+        reply = 'location'
+        await message.answer(reply)
+    elif 'Моя запись' in message.text:
+        reply = 'My entry'
+        await message.answer(reply)
+    else:
+        reply = ('Не понятное сообщение, попробуй снова')
+        await message.answer(reply)
+
+
+async def send_category_pages(callback_query: types.CallbackQuery, page):   
     categories = db.get_categories() #нужно реализовать
     pages = 1
     if len(categories) % 10 == 0:
@@ -120,7 +131,7 @@ async def send_category_pages(message: types.Message, page):
                         callback_data=cd+str(categories[i][0])))
 
     await bot.send_message(
-            message.chat.id,
+            callback_query.from_user.id,
             text=f'Услуги {page}',
             reply_markup=paginator.markup,
     )
