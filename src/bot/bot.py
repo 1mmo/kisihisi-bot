@@ -26,6 +26,10 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=storage)
 
 
+@dp.callback_query_handler(lambda c: c.data == 'back_to_menu')
+async def process_callback_back_to_menu(callback_query: types.CallbackQuery):
+    await send_welcome('Back to menu')
+
 @dp.callback_query_handler(lambda c: c.data == 'procedures')
 async def procces_callback_procedures(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id, text='Procedures')
@@ -38,9 +42,12 @@ async def procces_callback_complex(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data == 'services')
 async def process_callback_services(callback_query: types.CallbackQuery):
+    await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
     inline_complex = InlineKeyboardButton('Комплексы', callback_data='complex')
     inline_procedures = InlineKeyboardButton('Процедуры', callback_data='procedures')
+    inline_back = InlineKeyboardButton('Назад', callback_data = 'back_to_menu')
     inline_kb = InlineKeyboardMarkup().row(inline_procedures, inline_complex)
+    inline_kb.add(inline_back)
     reply = (
             'ПРАЙС\nКоплексы\nДолговременная укладка         1200 руб\n+коррекция\n+окрашивание хной/краской'
     )
@@ -67,21 +74,21 @@ async def send_welcome(message: types.Message, from_user=None):
     inline_button_date = InlineKeyboardButton('Дата 🗓', callback_data='date')
     inline_kb = InlineKeyboardMarkup().row(inline_button_services, inline_button_date)
     values = []
-    if from_user:
-        name = from_user.first_name
-        values.append(str(from_user.id))
-        values.append(from_user.first_name)
-        values.append(from_user.last_name)
-        values.append(from_user.username)
+    #if from_user:
+        #name = from_user.first_name
+        #values.append(str(from_user.id))
+        #values.append(from_user.first_name)
+        #values.append(from_user.last_name)
+        #values.append(from_user.username)
         #db.subscribe(values) проверка на подписку через БД
-    else:
-        name = message.from_user.first_name
-        values.append(str(message.from_user.first_name))
-        values.append(message.from_user.last_name)
-        values.append(message.from_user.username)
+    #else:
+        #name = message.from_user.first_name
+        #values.append(str(message.from_user.first_name))
+        #values.append(message.from_user.last_name)
+        #values.append(message.from_user.username)
         #db.subscribe(values) проверка на подписку через БД
     reply = (
-        f'Привет, {name} 👋 \nДобро пожаловать в kisihisi-bot\n'
+        'Привет 👋 \nДобро пожаловать в kisihisi-bot\n'
     )
 
     reply2 = (
