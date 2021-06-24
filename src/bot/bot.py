@@ -26,6 +26,33 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=storage)
 
 
+@dp.callback_query_handler(lambda c: c.data == 'procedures')
+async def procces_callback_procedures(callback_query: types.CallbackQuery):
+    await bot.send_message(callback_query.from_user.id, text='Procedures')
+
+
+@dp.callback_query_handler(lambda c: c.data == 'complex')
+async def procces_callback_complex(callback_query: types.CallbackQuery):
+    await send_complex_pages(callback_query, 1)
+
+
+@dp.callback_query_handler(lambda c: c.data == 'services')
+async def process_callback_services(callback_query: types.CallbackQuery):
+    inline_complex = InlineKeyboardButton('Комплексы', callback_data='complex')
+    inline_procedures = InlineKeyboardButton('Процедуры', callback_data='procedures')
+    inline_kb = InlineKeyboardMarkup().row(inline_procedures, inline_complex)
+    reply = (
+            'ПРАЙС\nКоплексы\nДолговременная укладка         1200 руб\n+коррекция\n+окрашивание хной/краской'
+    )
+    await bot.send_message(callback_query.from_user.id, text=reply,  reply_markup=inline_kb)
+
+
+@dp.callback_query_handler(lambda c: c.data == 'date')
+async def process_callback_date(callback_query: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query.id)
+    await bot.send_message(callback_query.from_user.id, 'Выберите дату')
+
+
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message, from_user=None):
     button_location = types.KeyboardButton(
@@ -63,16 +90,6 @@ async def send_welcome(message: types.Message, from_user=None):
     await message.answer(reply, reply_markup=keyboard)
     await message.answer(reply2, reply_markup=inline_kb)
 
-@dp.callback_query_handler(lambda c: c.data == 'services')
-async def process_callback_services(callback_query: types.CallbackQuery):
-    await send_category_pages(callback_query, 1)
-
-
-@dp.callback_query_handler(lambda c: c.data == 'date')
-async def process_callback_date(callback_query: types.CallbackQuery):
-    await bot.answer_callback_query(callback_query.id)
-    await bot.send_message(callback_query.from_user.id, 'Выберите дату')
-    
 
 @dp.message_handler(commands=['help'])
 async def help_text(message: types.Message):
@@ -95,7 +112,8 @@ async def message_parse(message: types.Message):
         await message.answer(reply)
 
 
-async def send_category_pages(callback_query: types.CallbackQuery, page):   
+async def send_complex_pages(callback_query: types.CallbackQuery, page):
+    await bot.send_message(callback_query.from_user.id, 'Complete')
     categories = db.get_categories() #нужно реализовать
     pages = 1
     if len(categories) % 10 == 0:
