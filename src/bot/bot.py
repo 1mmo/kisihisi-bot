@@ -26,14 +26,21 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=storage)
 
 
+@dp.callback_query_handler(lambda c: c.data == 'back_to_services')
+async def procces_callback_back_to_services(callback_query: types.CallbackQuery):
+    await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
+    await procces_Callback_services(callback_query)
+
+
 @dp.callback_query_handler(lambda c: c.data == 'back_to_menu')
 async def process_callback_back_to_menu(callback_query: types.CallbackQuery):
-    await send_welcome('Back to menu')
+    await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
+    await send_menu(callback_query.message)
 
 @dp.callback_query_handler(lambda c: c.data == 'procedures')
 async def procces_callback_procedures(callback_query: types.CallbackQuery):
     await bot.send_message(callback_query.from_user.id, text='Procedures')
-
+    
 
 @dp.callback_query_handler(lambda c: c.data == 'complex')
 async def procces_callback_complex(callback_query: types.CallbackQuery):
@@ -41,7 +48,7 @@ async def procces_callback_complex(callback_query: types.CallbackQuery):
 
 
 @dp.callback_query_handler(lambda c: c.data == 'services')
-async def process_callback_services(callback_query: types.CallbackQuery):
+async def procces_callback_services(callback_query: types.CallbackQuery):
     await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
     inline_complex = InlineKeyboardButton('Комплексы', callback_data='complex')
     inline_procedures = InlineKeyboardButton('Процедуры', callback_data='procedures')
@@ -74,28 +81,24 @@ async def send_welcome(message: types.Message, from_user=None):
     inline_button_date = InlineKeyboardButton('Дата 🗓', callback_data='date')
     inline_kb = InlineKeyboardMarkup().row(inline_button_services, inline_button_date)
     values = []
-    #if from_user:
-        #name = from_user.first_name
-        #values.append(str(from_user.id))
-        #values.append(from_user.first_name)
-        #values.append(from_user.last_name)
-        #values.append(from_user.username)
+    if from_user:
+        name = from_user.first_name
+        values.append(str(from_user.id))
+        values.append(from_user.first_name)
+        values.append(from_user.last_name)
+        values.append(from_user.username)
         #db.subscribe(values) проверка на подписку через БД
-    #else:
-        #name = message.from_user.first_name
-        #values.append(str(message.from_user.first_name))
-        #values.append(message.from_user.last_name)
-        #values.append(message.from_user.username)
+    else:
+        name = message.from_user.first_name
+        values.append(str(message.from_user.first_name))
+        values.append(message.from_user.last_name)
+        values.append(message.from_user.username)
         #db.subscribe(values) проверка на подписку через БД
     reply = (
-        'Привет 👋 \nДобро пожаловать в kisihisi-bot\n'
-    )
-
-    reply2 = (
-        'Чтобы записаться на прием выбери услугу и дату записи'
+        f'Привет {name} 👋 \nДобро пожаловать в kisihisi-bot\n'
     )
     await message.answer(reply, reply_markup=keyboard)
-    await message.answer(reply2, reply_markup=inline_kb)
+    await send_menu(message)
 
 
 @dp.message_handler(commands=['help'])
@@ -119,9 +122,9 @@ async def message_parse(message: types.Message):
         await message.answer(reply)
 
 
-async def send_complex_pages(callback_query: types.CallbackQuery, page):
-    await bot.send_message(callback_query.from_user.id, 'Complete')
-    categories = db.get_categories() #нужно реализовать
+async def send_procedures_pages(callback_query: types.CallbackQuery, page):
+    await bot.send_message(callback_query.from_user.id, 'Procedures')
+    procedures = db.get_procedures() #нужно реализовать
     pages = 1
     if len(categories) % 10 == 0:
         pages = len(categories)//10
@@ -155,11 +158,26 @@ async def send_complex_pages(callback_query: types.CallbackQuery, page):
                         categories[i][1],
                         callback_data=cd+str(categories[i][0])))
 
+    paginator.add_after(InlineKeyboardButton('Назад', callback_data='back_to_services')
+
     await bot.send_message(
             callback_query.from_user.id,
             text=f'Услуги {page}',
             reply_markup=paginator.markup,
     )
+
+
+async def send_menu(message: types.Message):
+    inline_button_services = InlineKeyboardButton('Услуги 🥰', callback_data='services')
+    inline_button_date = InlineKeyboardButton('Дата 🗓', callback_data='date')
+    inline_kb = InlineKeyboardMarkup().row(inline_button_services, inline_button_date)
+    reply = (
+        'Чтобы записаться на прием выбери услугу и дату записи'
+    )
+    await message.answer(reply, reply_markup=inline_kb)
+
+
+
 
 
 if __name__ == '__main__':
