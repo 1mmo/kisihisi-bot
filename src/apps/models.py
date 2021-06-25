@@ -26,7 +26,7 @@ class Users(models.Model):
 
 
 class Complex(models.Model):
-    title = models.CharField(max_length=32, default='')
+    title = models.CharField(max_length=100, default='')
     price = models.CharField(max_length=10)
     
     def __str__(self):
@@ -39,7 +39,7 @@ class Complex(models.Model):
 
 
 class Procedures(models.Model):
-    title = models.CharField(max_length=32, default='')
+    title = models.CharField(max_length=100, default='')
     price = models.CharField(max_length=10)
 
     def __str__(self):
@@ -49,5 +49,3 @@ class Procedures(models.Model):
         db_table = 'procedure'
         verbose_name = 'Procedure'
         verbose_name_plural = 'Procedures'
-
-
