@@ -30,7 +30,7 @@ dp = Dispatcher(bot, storage=storage)
 @dp.callback_query_handler(lambda c: c.data == 'back_to_services')
 async def procces_callback_back_to_services(callback_query: types.CallbackQuery):
     await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
-    await procces_Callback_services(callback_query)
+    await procces_callback_services(callback_query)
 
 
 @dp.callback_query_handler(lambda c: c.data == 'back_to_menu')
@@ -151,7 +151,7 @@ async def send_procedures_pages(message: types.Message, page):
                     procedures[i][1],
                     callback_data=cd+str(procedures[i][0])),
                 InlineKeyboardButton(
-                    procedures[i+1][i],
+                    procedures[i+1][1],
                     callback_data=cd+str(procedures[i+1][0])))
         else:
             paginator.add_before(
