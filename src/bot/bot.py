@@ -9,6 +9,7 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+from common import db
 
 from keyboard.pagination_kb import InlineKeyboardPaginator
 
@@ -39,7 +40,7 @@ async def process_callback_back_to_menu(callback_query: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data == 'procedures')
 async def procces_callback_procedures(callback_query: types.CallbackQuery):
-    await bot.send_message(callback_query.from_user.id, text='Procedures')
+    await send_procedures_pages(callback_query.message, 1)
     
 
 @dp.callback_query_handler(lambda c: c.data == 'complex')
@@ -87,13 +88,14 @@ async def send_welcome(message: types.Message, from_user=None):
         values.append(from_user.first_name)
         values.append(from_user.last_name)
         values.append(from_user.username)
-        #db.subscribe(values) проверка на подписку через БД
+        db.subscribe(values)
     else:
         name = message.from_user.first_name
-        values.append(str(message.from_user.first_name))
+        values.append(str(message.from_user.id))
+        values.append(message.from_user.first_name)
         values.append(message.from_user.last_name)
         values.append(message.from_user.username)
-        #db.subscribe(values) проверка на подписку через БД
+        db.subscribe(values)    
     reply = (
         f'Привет {name} 👋 \nДобро пожаловать в kisihisi-bot\n'
     )
@@ -122,46 +124,45 @@ async def message_parse(message: types.Message):
         await message.answer(reply)
 
 
-async def send_procedures_pages(callback_query: types.CallbackQuery, page):
-    await bot.send_message(callback_query.from_user.id, 'Procedures')
-    procedures = db.get_procedures() #нужно реализовать
+async def send_procedures_pages(message: types.Message, page):
+    procedures = db.get_procedures()
     pages = 1
-    if len(categories) % 10 == 0:
-        pages = len(categories)//10
+    if len(procedures) % 10 == 0:
+        pages = len(procedures)//10
     else:
-        pages = len(categories)//10 + 1
+        pages = len(procedures)//10 + 1
     paginator = InlineKeyboardPaginator(
         pages,
         current_page=page,
-        data_pattern='category#{page}',
+        data_pattern='procedures#{page}',
     )
     start_f = page * 10 - 10
     stop_f = page * 10
-    cd = 'category#'
+    cd = 'procedures_value#'
     # cd - callback data type
-    
-    if len(categories) < stop_f:
-        stop_f = len(categories)
+
+    if len(procedures) < stop_f:
+        stop_f = len(procedures)
 
     for i in range(start_f, stop_f, 2):
-        if stop_f != (i+1):
+        if stop_f != (i + 1):
             paginator.add_before(
                 InlineKeyboardButton(
-                    categories[i][1],
-                    callback_data=cd+str(categories[i][0])),
+                    procedures[i][1],
+                    callback_data=cd+str(procedures[i][0])),
                 InlineKeyboardButton(
-                    categories[i+1][i],
-                    callback_data=cd+str(categories[i+1][0])))
+                    procedures[i+1][i],
+                    callback_data=cd+str(procedures[i+1][0])))
         else:
             paginator.add_before(
                     InlineKeyboardButton(
-                        categories[i][1],
-                        callback_data=cd+str(categories[i][0])))
+                        procedures[i][1],
+                        callback_data=cd+str(procedures[i][0])))
 
-    paginator.add_after(InlineKeyboardButton('Назад', callback_data='back_to_services')
+    paginator.add_after(InlineKeyboardButton('Назад', callback_data='back_to_services'))
 
     await bot.send_message(
-            callback_query.from_user.id,
+            message.chat.id,
             text=f'Услуги {page}',
             reply_markup=paginator.markup,
     )
@@ -175,9 +176,6 @@ async def send_menu(message: types.Message):
         'Чтобы записаться на прием выбери услугу и дату записи'
     )
     await message.answer(reply, reply_markup=inline_kb)
-
-
-
 
 
 if __name__ == '__main__':
