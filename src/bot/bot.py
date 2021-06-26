@@ -115,13 +115,16 @@ async def help_text(message: types.Message):
 @dp.message_handler()
 async def message_parse(message: types.Message):
     if 'Локация' in message.text:
-        reply = 'location'
-        await message.answer(reply)
+        inline_back = InlineKeyboardButton('Назад 👈', callback_data = 'back_to_menu')
+        inline_kb = InlineKeyboardMarkup().add(inline_back)
+        reply = 'Нижний Новгород, площадь Максима Горького, 4/2'
+        await bot.send_location(message.from_user.id, 56.314576, 43.99056)
+        await message.answer(text=reply, reply_markup=inline_kb)
     elif 'Моя запись' in message.text:
         reply = 'My entry'
         await message.answer(reply)
     else:
-        reply = ('Не понятное сообщение, попробуй снова')
+        reply = ('Непонятное сообщение, попробуй снова')
         await message.answer(reply)
 
 
@@ -161,7 +164,7 @@ async def send_procedures_pages(message: types.Message, page):
                         procedures[i][1],
                         callback_data=cd+str(procedures[i][0])))
 
-    paginator.add_after(InlineKeyboardButton('Назад', callback_data='back_to_services'))
+    paginator.add_after(InlineKeyboardButton('Назад 👈', callback_data='back_to_services'))
 
     await bot.send_message(
             message.chat.id,
