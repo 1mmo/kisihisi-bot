@@ -25,19 +25,6 @@ class Users(models.Model):
         verbose_name_plural = 'Users'
 
 
-class Complex(models.Model):
-    title = models.CharField(max_length=100, default='')
-    price = models.CharField(max_length=10)
-    
-    def __str__(self):
-        return self.title
-
-    class Meta:
-        db_table = 'complex'
-        verbose_name = 'Complex'
-        verbose_name_plural = 'Complexes'
-
-
 class Procedures(models.Model):
     title = models.CharField(max_length=100, default='')
     price = models.CharField(max_length=10)

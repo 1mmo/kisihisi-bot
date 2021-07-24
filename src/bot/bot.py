@@ -7,7 +7,8 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import State, StatesGroup
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram_calendar import simple_cal_callback, SimpleCalendar
 
 from common import db
 
@@ -27,47 +28,35 @@ bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot, storage=storage)
 
 
-@dp.callback_query_handler(lambda c: c.data == 'back_to_services')
-async def procces_callback_back_to_services(callback_query: types.CallbackQuery):
-    await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
-    await send_menu(callback_query.message)
-
-
 @dp.callback_query_handler(lambda c: c.data == 'back_to_menu')
 async def process_callback_back_to_menu(callback_query: types.CallbackQuery):
     await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
     await send_menu(callback_query.message)
 
-@dp.callback_query_handler(lambda c: c.data == 'procedures')
-async def procces_callback_procedures(callback_query: types.CallbackQuery):
-    await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
-    await send_procedures_pages(callback_query.message, 1)
-    
-
-@dp.callback_query_handler(lambda c: c.data == 'complex')
-async def procces_callback_complex(callback_query: types.CallbackQuery):
-    await send_complex_pages(callback_query, 1)
-
 
 @dp.callback_query_handler(lambda c: c.data == 'services')
 async def procces_callback_services(callback_query: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query.id, text='Здесь ты можешь выбрать услугу, если хочешь их может быть несколько')
     await bot.delete_message(callback_query.message.chat.id, callback_query.message.message_id)
-    inline_complex = InlineKeyboardButton('Комплексы', callback_data='complex')
-    inline_procedures = InlineKeyboardButton('Процедуры', callback_data='procedures')
-    inline_back = InlineKeyboardButton('Назад', callback_data = 'back_to_menu')
-    inline_kb = InlineKeyboardMarkup().row(inline_procedures, inline_complex)
-    inline_kb.add(inline_back)
-    reply = (
-            'ПРАЙС\nКоплексы\nДолговременная укладка         1200 руб\n+коррекция\n+окрашивание хной/краской'
-    )
-    await bot.send_message(callback_query.from_user.id, text=reply,  reply_markup=inline_kb)
+    await send_procedures_pages(callback_query.message, 1)
 
 
 @dp.callback_query_handler(lambda c: c.data == 'date')
 async def process_callback_date(callback_query: types.CallbackQuery):
-    await bot.answer_callback_query(callback_query.id)
-    await bot.send_message(callback_query.from_user.id, 'Выберите дату')
+    if db.check_admin(str(callback_query.from_user.id)):
+        await callback_query.message.answer("Please select a date: ", reply_markup=await SimpleCalendar().start_calendar())
+    else:
+        await callback_query.message.answer("Hey")
+   
 
+@dp.callback_query_handler(simple_cal_callback.filter())
+async def process_simple_calendar(callback_query: CallbackQuery, callback_data: dict):
+    selected, date = await SimpleCalendar().process_selection(callback_query, callback_data)
+    if selected:
+        await callback_query.message.answer(
+            db.send_date(date)
+            )
+    await send_menu(callback_query.message)
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message, from_user=None):
@@ -79,9 +68,6 @@ async def send_welcome(message: types.Message, from_user=None):
             )
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.row(button_location, button_my_entry)
-    inline_button_services = InlineKeyboardButton('Услуги 🥰', callback_data='services')
-    inline_button_date = InlineKeyboardButton('Дата 🗓', callback_data='date')
-    inline_kb = InlineKeyboardMarkup().row(inline_button_services, inline_button_date)
     values = []
     if from_user:
         name = from_user.first_name
@@ -164,7 +150,7 @@ async def send_procedures_pages(message: types.Message, page):
                         procedures[i][1],
                         callback_data=cd+str(procedures[i][0])))
 
-    paginator.add_after(InlineKeyboardButton('Назад 👈', callback_data='back_to_services'))
+    paginator.add_after(InlineKeyboardButton('Назад 👈', callback_data='back_to_menu'))
 
     await bot.send_message(
             message.chat.id,
@@ -176,7 +162,7 @@ async def send_procedures_pages(message: types.Message, page):
 async def send_menu(message: types.Message):
     inline_button_services = InlineKeyboardButton('Услуги 🥰', callback_data='services')
     inline_button_date = InlineKeyboardButton('Дата 🗓', callback_data='date')
-    inline_kb = InlineKeyboardMarkup().row(inline_button_services, inline_button_date)
+    inline_kb = InlineKeyboardMarkup(resize_keyboard=True).row(inline_button_services, inline_button_date)
     reply = (
         'Чтобы записаться на прием выбери услугу и дату записи'
     )
@@ -184,4 +170,4 @@ async def send_menu(message: types.Message):
 
 
 if __name__ == '__main__':
-    executor.start_polling(dp)
+    executor.start_polling(dp, skip_updates=True)

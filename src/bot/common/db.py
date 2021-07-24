@@ -60,3 +60,21 @@ def get_procedures():
     procedures = cursor.fetchall()
     return procedures
 
+def check_admin(chat_id):
+    query = """
+    SELECT status FROM users
+    WHERE chat_id = '{}';
+    """.format(chat_id)
+    connection.autocommit = True
+    cursor = connection.cursor()
+    cursor.execute(query, connection)
+    rows = cursor.fetchall()
+    if 'admin' in str(rows):
+        return True
+    else:
+        return False
+
+def send_date(date):
+    query = """
+    INSERT INTO date(year, month, day, time)
+    values='{}'
